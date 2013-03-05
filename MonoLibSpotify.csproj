@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{89E9F534-6F69-410E-A90B-C699D16B3BCD}</ProjectGuid>
+    <ProjectTypeGuids>{6BC8ED88-2882-458C-8E55-DFD12B67127B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <RootNamespace>MonoLibSpotify</RootNamespace>
+    <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
+    <AssemblyName>MonoLibSpotify</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>False</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>False</ConsolePause>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="monotouch" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="LibSpotify.cs" />
+    <Compile Include="LibspotifyWrapper.cs" />
+    <Compile Include="Models\StructsAndEnums.cs" />
+    <Compile Include="Events\EventWorkItem.cs" />
+    <Compile Include="Events\SessionEventArgs.cs" />
+    <Compile Include="Events\AlbumBrowseEventArgs.cs" />
+    <Compile Include="Events\ArtistBrowseEventArgs.cs" />
+    <Compile Include="Events\SearchEventArgs.cs" />
+    <Compile Include="Events\MusicDeliveryEventArgs.cs" />
+    <Compile Include="Events\ImageEventArgs.cs" />
+    <Compile Include="Browsers\AlbumBrowse.cs" />
+    <Compile Include="Browsers\ArtistBrowse.cs" />
+    <Compile Include="Player\SPPlayeriOS.cs" />
+    <Compile Include="Models\SPTrack.cs" />
+    <Compile Include="Models\SPSession.cs" />
+    <Compile Include="Models\SPSearch.cs" />
+    <Compile Include="Models\SPLink.cs" />
+    <Compile Include="Models\SPArtist.cs" />
+    <Compile Include="Models\SPAlbum.cs" />
+    <Compile Include="Events\TracksEventArgs.cs" />
+    <Compile Include="Events\PlaylistEventArgs.cs" />
+    <Compile Include="Models\SPUser.cs" />
+    <Compile Include="Models\SpotifyException.cs" />
+    <Compile Include="Example\Example.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="Events\" />
+    <Folder Include="Browsers\" />
+    <Folder Include="Player\" />
+    <Folder Include="Example\" />
+  </ItemGroup>
+</Project>

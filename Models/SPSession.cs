@@ -721,11 +721,16 @@ namespace MonoLibSpotify.Models
 			
 		}
 
-		void ImageLoadedCallback(IntPtr imagePtr, IntPtr userDataPtr)
+		[MonoPInvokeCallback (typeof(image_loaded_cb_delegate))]
+		static void ImageLoadedCallback(IntPtr imagePtr, IntPtr userDataPtr)
 		{
+			SPSession s = null;
+			foreach(var kp in sessions){
+				s = kp.Value;
+			}
 			
 			var id = userDataPtr.ToInt32();
-			var state = states.ContainsKey(id) ? states[id] : null;
+			var state = s.states.ContainsKey(id) ? s.states[id] : null;
 			ManualResetEvent wh = null;
 			var isSync = id > short.MaxValue;
 			if (isSync)
@@ -761,13 +766,13 @@ namespace MonoLibSpotify.Models
 				
 				if (!isSync)
 				{
-					EnqueueEventWorkItem(new EventWorkItem(OnImageLoaded, new object[] { this, 
+					s.EnqueueEventWorkItem(new EventWorkItem(s.OnImageLoaded, new object[] { s, 
 						new ImageEventArgs(bmp, LibspotifyWrapper.ImageIdToString(LibspotifyWrapper.Image.ID(imagePtr)), state) }
 					));
 				}
 				else if (wh != null)
 				{
-					states[id] = bmp;
+					s.states[id] = bmp;
 					wh.Set();
 				}
 				
@@ -776,13 +781,13 @@ namespace MonoLibSpotify.Models
 			{
 				if (!isSync)
 				{
-					EnqueueEventWorkItem(new EventWorkItem(OnImageLoaded, new object[] { this, 
+					s.EnqueueEventWorkItem(new EventWorkItem(s.OnImageLoaded, new object[] { s, 
 						new ImageEventArgs(ex.Message, LibspotifyWrapper.ImageIdToString(LibspotifyWrapper.Image.ID(imagePtr)), state) }
 					));
 				}
 				else if (wh != null)
 				{
-					states[id] = null;
+					s.states[id] = null;
 					wh.Set();
 				}
 			}

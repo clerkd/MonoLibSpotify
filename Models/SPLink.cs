@@ -52,12 +52,9 @@ namespace MonoLibSpotify.Models
 		public static SPLink Create(string linkString)
 		{
 			lock(LibspotifyWrapper.Mutex)
-			{		
-				IntPtr linkPtr = LibspotifyWrapper.Link.CreateFromString(linkString);			
-				if(linkPtr != IntPtr.Zero)
-					return new SPLink(linkPtr);
-				else
-					return null;
+			{
+			    var linkPtr = LibspotifyWrapper.Link.CreateFromString(linkString);
+			    return linkPtr != IntPtr.Zero ? new SPLink(linkPtr) : null;
 			}
 		}
 		#endregion
@@ -79,13 +76,13 @@ namespace MonoLibSpotify.Models
 		{
 			CheckDisposed(true);
 			
-			string result = string.Empty;
-			int bufSize = 256;
+			var result = string.Empty;
+			var bufSize = 256;
 			
 			while(true)
 			{
-				int strlen = bufSize;
-				IntPtr bufferPtr = IntPtr.Zero;
+				var strlen = bufSize;
+				var bufferPtr = IntPtr.Zero;
 				
 				try
 				{
@@ -136,16 +133,14 @@ namespace MonoLibSpotify.Models
 				{
 					
 				}
-				
-				if(linkPtr != IntPtr.Zero)
-				{
-					LibspotifyWrapper.Link.Release(linkPtr);
-					linkPtr = IntPtr.Zero;
-				}			
+
+			    if (linkPtr == IntPtr.Zero) return;
+			    LibspotifyWrapper.Link.Release(linkPtr);
+			    linkPtr = IntPtr.Zero;
 			}
-			catch
+			catch(Exception e)
 			{
-				
+				Console.WriteLine(e);
 			}
 		}		
 		
@@ -162,7 +157,7 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				bool result = linkPtr == IntPtr.Zero;
+				var result = linkPtr == IntPtr.Zero;
 				if(result && throwOnDisposed)
 					throw new ObjectDisposedException("Link");
 				

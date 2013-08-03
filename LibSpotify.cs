@@ -27,21 +27,15 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-
 using MonoLibSpotify.Models;
-using MonoLibSpotify.Events;
 
 namespace MonoLibSpotify
 {
 	public class LibSpotify
 	{
-		SPSession currentSession;
-		public SPSession CurrentSession {
-			get { return currentSession; }
-		}
+	    public SPSession CurrentSession { get; private set; }
 
-		public static string BuildId {
+	    public static string BuildId {
 			get { return LibspotifyWrapper.GetString(LibspotifyWrapper.SpotifyBuildId(), "Unknown"); }
 		}
 
@@ -53,23 +47,23 @@ namespace MonoLibSpotify
 		public bool LogIn(string user, string pass, bool rememberme = false)
 		{
 			// login
-			return currentSession.LogIn(user, pass, rememberme);
+			return CurrentSession.LogIn(user, pass, rememberme);
 		}
 
 		public bool ReLogin ()
 		{
-			return currentSession.ReLogin();
+			return CurrentSession.ReLogin();
 		}
 
 		public void LogOut(bool forget = true)
 		{
-			currentSession.LogOut(forget);
+			CurrentSession.LogOut(forget);
 		}
 
 		void init(byte[] appKey, string uAgent, SPAsyncLoadingPolicy loadPolicy = SPAsyncLoadingPolicy.Immediate)
 		{
 			// make session
-			currentSession = SPSession.CreateInstance(appKey, uAgent, loadPolicy);
+			CurrentSession = SPSession.CreateInstance(appKey, uAgent, loadPolicy);
 		}
 	}
 }

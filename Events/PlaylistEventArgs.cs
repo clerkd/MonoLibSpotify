@@ -27,31 +27,21 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-
 namespace MonoLibSpotify.Events
 {
 	public class PlaylistEventArgs
 	{
-		private bool done;
-		
-		internal PlaylistEventArgs()
+	    internal PlaylistEventArgs()
 		{
-			this.done = true;
+			Done = true;
 		}
 		
 		internal PlaylistEventArgs(bool done)
 		{
-			this.done = done;
+			Done = done;
 		}
-		
-		public bool Done
-		{
-			get
-			{
-				return done;
-			}
-		}
+
+	    public bool Done { get; private set; }
 	}
 }
 

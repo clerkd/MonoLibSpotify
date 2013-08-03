@@ -28,8 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace MonoLibSpotify.Models
 {
@@ -60,7 +59,7 @@ namespace MonoLibSpotify.Models
 			{
 				lock(LibspotifyWrapper.Mutex)
 				{
-					IntPtr artistPtr = LibspotifyWrapper.Link.AsArtist(link.linkPtr);
+					var artistPtr = LibspotifyWrapper.Link.AsArtist(link.linkPtr);
 					if(artistPtr != IntPtr.Zero)
 						result = new SPArtist(artistPtr);
 				}
@@ -71,16 +70,10 @@ namespace MonoLibSpotify.Models
 		
 		public static string ArtistsToString(SPArtist[] artists)
 		{
-			if(artists == null)
-				return string.Empty;
-			
-			List<string> names = new List<string>();
-			foreach(SPArtist a in artists)
-				names.Add(a.Name);
-			
-			return string.Join(", ", names.ToArray());
+		    return artists == null ? string.Empty : string.Join(", ", artists.Select(a => a.Name).ToArray());
 		}
-		#endregion
+
+	    #endregion
 		
 		#region Properties
 		public bool IsLoaded
@@ -115,8 +108,8 @@ namespace MonoLibSpotify.Models
 			{
 				CheckDisposed(true);
 				
-				string linkString = string.Empty;
-				using(SPLink l = CreateLink())
+				var linkString = string.Empty;
+				using(var l = CreateLink())
 				{
 					if( l != null)
 						linkString = l.ToString();						
@@ -134,22 +127,17 @@ namespace MonoLibSpotify.Models
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				IntPtr linkPtr = LibspotifyWrapper.Link.CreateFromArtist(artistPtr);
-				if(linkPtr != IntPtr.Zero)
-					return new SPLink(linkPtr);
-				else
-					return null;
+			    var linkPtr = LibspotifyWrapper.Link.CreateFromArtist(artistPtr);
+			    return linkPtr != IntPtr.Zero ? new SPLink(linkPtr) : null;
 			}
 		}
 		
 		public override string ToString()
 		{
-			if(IsLoaded)
-				return string.Format("[Artist: Name={0}, LinkString={1}]", Name, LinkString);
-			else
-				return "[Artist: Not loaded]";
+		    return IsLoaded ? string.Format("[Artist: Name={0}, LinkString={1}]", Name, LinkString) : "[Artist: Not loaded]";
 		}
-		#endregion
+
+	    #endregion
 		
 		#region Cleanup
 		~SPArtist()
@@ -165,16 +153,14 @@ namespace MonoLibSpotify.Models
 				{
 					
 				}
-				
-				if(artistPtr != IntPtr.Zero)
-				{
-					LibspotifyWrapper.Artist.Release(artistPtr);
-					artistPtr = IntPtr.Zero;
-				}
+
+			    if (artistPtr == IntPtr.Zero) return;
+			    LibspotifyWrapper.Artist.Release(artistPtr);
+			    artistPtr = IntPtr.Zero;
 			}
-			catch
+			catch(Exception e)
 			{
-				
+				Console.WriteLine(e);
 			}
 		}		
 		
@@ -191,7 +177,7 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				bool result = artistPtr == IntPtr.Zero;
+				var result = artistPtr == IntPtr.Zero;
 				if(result && throwOnDisposed)
 					throw new ObjectDisposedException("Artist");
 				

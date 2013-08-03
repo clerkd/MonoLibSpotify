@@ -423,17 +423,14 @@ namespace MonoLibSpotify
 			if (ptr == IntPtr.Zero)
 				return defaultValue;
 			
-			System.Collections.Generic.List<byte> l = new System.Collections.Generic.List<byte>();            
+			var l = new System.Collections.Generic.List<byte>();            
 			byte read = 0;
 			do {
 				read = Marshal.ReadByte(ptr, l.Count);                
 				l.Add(read);
 			} while (read != 0);
 			
-			if (l.Count > 0)
-				return System.Text.Encoding.UTF8.GetString(l.ToArray(), 0, l.Count - 1);
-			else
-				return string.Empty;
+			return l.Count > 0 ? System.Text.Encoding.UTF8.GetString(l.ToArray(), 0, l.Count - 1) : string.Empty;
 		}
 
 		internal static string ImageIdToString(byte[] id)
@@ -441,8 +438,8 @@ namespace MonoLibSpotify
 			if(id == null)
 				return string.Empty;
 			
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
-			foreach(byte b in id)
+			var sb = new System.Text.StringBuilder();
+			foreach(var b in id)
 				sb.Append(b.ToString("X2"));
 			
 			return sb.ToString();
@@ -453,7 +450,7 @@ namespace MonoLibSpotify
 			if(idPtr == IntPtr.Zero)
 				return string.Empty;
 			
-			byte[] id = new byte[20];
+			var id = new byte[20];
 			Marshal.Copy(idPtr, id, 0, 20);
 			
 			return ImageIdToString(id);
@@ -465,16 +462,17 @@ namespace MonoLibSpotify
 				return null;
 			try
 			{
-				byte[] result = new byte[20];
-				for(int i = 0; i < 20 ; i++)
+				var result = new byte[20];
+				for(var i = 0; i < 20 ; i++)
 				{
 					result[i] = byte.Parse(id.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
 				}
 				
 				return result;
 			}
-			catch
-			{
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
 			}
 			return null;
 		}

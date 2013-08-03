@@ -27,68 +27,30 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System;
-
 using MonoLibSpotify.Models;
 
 namespace MonoLibSpotify.Events
 {
 	public class TracksEventArgs
 	{
-		private SPTrack[] tracks;
-		private int[] trackIndices;
-		private int position;
-		private int newPosition;
-		private SPTrack[] currentTracks;
-		
-		internal TracksEventArgs(SPTrack[] tracks, int[] trackIndices, int position, int newPosition, SPTrack[] currentTracks)
+	    internal TracksEventArgs(SPTrack[] tracks, int[] trackIndices, int position, int newPosition, SPTrack[] currentTracks)
 		{
-			this.tracks = tracks;
-			this.trackIndices = trackIndices;
-			this.position = position;
-			this.newPosition = newPosition;
-			this.currentTracks = currentTracks;
+			Tracks = tracks;
+			TrackIndices = trackIndices;
+			Position = position;
+            NewPosition = newPosition;
+			CurrentTracks = currentTracks;
 		}
-		
-		public SPTrack[] Tracks
-		{
-			get
-			{
-				return tracks;
-			}
-		}
-		
-		public int[] TrackIndices
-		{
-			get
-			{
-				return trackIndices;
-			}
-		}
-		
-		public int Position
-		{
-			get
-			{
-				return position;
-			}
-		}
-		
-		public int NewPosition
-		{
-			get
-			{
-				return newPosition;
-			}
-		}
-		
-		public SPTrack[] CurrentTracks
-		{
-			get
-			{
-				return currentTracks;
-			}
-		}
+
+	    public SPTrack[] Tracks { get; private set; }
+
+	    public int[] TrackIndices { get; private set; }
+
+	    public int Position { get; private set; }
+
+	    public int NewPosition { get; private set; }
+
+	    public SPTrack[] CurrentTracks { get; private set; }
 	}
 }
 

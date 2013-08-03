@@ -29,31 +29,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
 
-using MonoLibSpotify.Models;
 using MonoLibSpotify.Browsers;
 
 namespace MonoLibSpotify.Events
 {
 	public class AlbumBrowseEventArgs : EventArgs
 	{
-		AlbumBrowse result;
-		object state;
-		
-		internal AlbumBrowseEventArgs(AlbumBrowse result, object state)
+	    internal AlbumBrowseEventArgs(AlbumBrowse result, object state)
 		{
-			this.result = result;
-			this.state = state;
+			Result = result;
+			State = state;
 		}
-		
-		public AlbumBrowse Result
-		{
-			get { return result; }
-		}
-		
-		public object State
-		{
-			get { return state; }
-		}
+
+	    public AlbumBrowse Result { get; private set; }
+
+	    public object State { get; private set; }
 	}
 }
 

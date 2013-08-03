@@ -35,37 +35,29 @@ namespace MonoLibSpotify.Events
 {
 	public class ImageEventArgs : EventArgs
 	{
+	    private string error = string.Empty;
+	    private string id = string.Empty;
+		
+		internal ImageEventArgs(UIImage image, string idp, object state)
+		{
+			State = state;
+			Image = image;
+			id = idp;
+		}
+		
+		internal ImageEventArgs(string errorm, string idp, object state)
+		{
+		    Image = null;
+		    State = state;
+			error = errorm;
+			id = idp;
+		}
 
-		private UIImage image = null;
-		private string error = string.Empty;
-		private object state;
-		private string id = string.Empty;
-		
-		internal ImageEventArgs(UIImage image, string id, object state)
-		{
-			this.state = state;
-			this.image = image;
-			this.id = id;
-		}
-		
-		internal ImageEventArgs(string error, string id, object state)
-		{
-			this.state = state;
-			this.error = error;
-			this.id = id;
-		}
-		
-		public object State
-		{
-			get { return state; }
-		}
-		
-		public UIImage Image
-		{
-			get { return image; }
-		}
-		
-		public string Error
+	    public object State { get; private set; }
+
+	    public UIImage Image { get; private set; }
+
+	    public string Error
 		{
 			get { return error; }
 		}

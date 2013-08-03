@@ -52,12 +52,12 @@ namespace MonoLibSpotify.Events
 		
 		public sp_error Status
 		{
-			get { return this.error; }
+			get { return error; }
 		}
 		
 		public string Message
 		{
-			get { return this.message; }
+			get { return message; }
 		}
 	}
 }

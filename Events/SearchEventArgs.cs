@@ -35,24 +35,15 @@ namespace MonoLibSpotify.Events
 {
 	public class SearchEventArgs : EventArgs
 	{
-		SPSearch result;
-		object state;
-		
-		internal SearchEventArgs(SPSearch result, object state)
+	    internal SearchEventArgs(SPSearch result, object state)
 		{
-			this.result = result;
-			this.state = state;
+			Result = result;
+			State = state;
 		}
-		
-		public SPSearch Result
-		{
-			get { return result; }
-		}
-		
-		public object State
-		{
-			get { return state; }
-		}
+
+	    public SPSearch Result { get; private set; }
+
+	    public object State { get; private set; }
 	}
 }
 

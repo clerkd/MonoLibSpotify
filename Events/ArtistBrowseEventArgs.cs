@@ -35,24 +35,15 @@ namespace MonoLibSpotify.Events
 {
 	public class ArtistBrowseEventArgs : EventArgs
 	{
-		ArtistBrowse result;
-		private object state;
-		
-		internal ArtistBrowseEventArgs(ArtistBrowse result, object state)
+	    internal ArtistBrowseEventArgs(ArtistBrowse result, object state)
 		{
-			this.result = result;
-			this.state = state;
+			Result = result;
+			State = state;
 		}
-		
-		public ArtistBrowse Result
-		{
-			get { return result; }
-		}
-		
-		public object State
-		{
-			get { return state; }
-		}
+
+	    public ArtistBrowse Result { get; private set; }
+
+	    public object State { get; private set; }
 	}
 }
 

@@ -60,7 +60,7 @@ namespace MonoLibSpotify.Models
 			{
 				lock(LibspotifyWrapper.Mutex)
 				{
-					IntPtr albumPtr = LibspotifyWrapper.Link.AsAlbum(link.linkPtr);
+					var albumPtr = LibspotifyWrapper.Link.AsAlbum(link.linkPtr);
 					if(albumPtr != IntPtr.Zero)
 						result = new SPAlbum(albumPtr);
 				}
@@ -144,11 +144,11 @@ namespace MonoLibSpotify.Models
 				
 				lock(LibspotifyWrapper.Mutex)
 				{
-					IntPtr coverIdPtr = LibspotifyWrapper.Album.Cover(albumPtr);
+					var coverIdPtr = LibspotifyWrapper.Album.Cover(albumPtr);
 					if (coverIdPtr == IntPtr.Zero)
 						return null;
 					
-					byte[] coverId = new byte[20];
+					var coverId = new byte[20];
 					Marshal.Copy(coverIdPtr, coverId, 0, coverId.Length);
 					return LibspotifyWrapper.ImageIdToString(coverId);
 				}
@@ -161,8 +161,8 @@ namespace MonoLibSpotify.Models
 			{
 				CheckDisposed(true);
 				
-				string linkString = string.Empty;
-				using(SPLink l = CreateLink())
+				var linkString = string.Empty;
+				using(var l = CreateLink())
 				{
 					if( l != null)
 						linkString = l.ToString();	
@@ -193,11 +193,8 @@ namespace MonoLibSpotify.Models
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				IntPtr linkPtr = LibspotifyWrapper.Link.CreateFromAlbum(albumPtr);
-				if(linkPtr != IntPtr.Zero)
-					return new SPLink(linkPtr);
-				else
-					return null;
+			    var linkPtr = LibspotifyWrapper.Link.CreateFromAlbum(albumPtr);
+			    return linkPtr != IntPtr.Zero ? new SPLink(linkPtr) : null;
 			}
 		}
 		
@@ -229,16 +226,14 @@ namespace MonoLibSpotify.Models
 				{
 					
 				}
-				
-				if(albumPtr != IntPtr.Zero)
-				{
-					LibspotifyWrapper.Album.Release(albumPtr);
-					albumPtr = IntPtr.Zero;
-				}
+
+			    if (albumPtr == IntPtr.Zero) return;
+			    LibspotifyWrapper.Album.Release(albumPtr);
+			    albumPtr = IntPtr.Zero;
 			}
-			catch
+			catch(Exception e)
 			{
-				
+				Console.WriteLine(e);
 			}
 		}		
 		
@@ -255,7 +250,7 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				bool result = albumPtr == IntPtr.Zero;
+				var result = albumPtr == IntPtr.Zero;
 				if(result && throwOnDisposed)
 					throw new ObjectDisposedException("Album");
 				

@@ -28,10 +28,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
-using MonoLibSpotify.Models;
 
 namespace MonoLibSpotify.Models
 {
@@ -59,29 +57,29 @@ namespace MonoLibSpotify.Models
 			
 			lock (LibspotifyWrapper.Mutex)
 			{
-				IntPtr strPtr = IntPtr.Zero;
+				var strPtr = IntPtr.Zero;
 				
 				error = LibspotifyWrapper.Search.Error(searchPtr);
 
-				int numTracks = LibspotifyWrapper.Search.NumTracks(searchPtr);
+				var numTracks = LibspotifyWrapper.Search.NumTracks(searchPtr);
 				tracks = new SPTrack[numTracks];
-				for (int i = 0; i < tracks.Length; i++)
+				for (var i = 0; i < tracks.Length; i++)
 				{
-					IntPtr trackPtr = LibspotifyWrapper.Search.Track(searchPtr, i);
+					var trackPtr = LibspotifyWrapper.Search.Track(searchPtr, i);
 					tracks[i] = new SPTrack(trackPtr);
 				}
 
 				albums = new SPAlbum[LibspotifyWrapper.Search.NumAlbums(searchPtr)];
-				for (int i = 0; i < albums.Length; i++)
+				for (var i = 0; i < albums.Length; i++)
 				{
-					IntPtr albumPtr = LibspotifyWrapper.Search.Album(searchPtr, i);
+					var albumPtr = LibspotifyWrapper.Search.Album(searchPtr, i);
 					albums[i] = new SPAlbum(albumPtr);
 				}
 
 				artists = new SPArtist[LibspotifyWrapper.Search.NumArtists(searchPtr)];
-				for (int i = 0; i < artists.Length; i++)
+				for (var i = 0; i < artists.Length; i++)
 				{
-					IntPtr artistPtr = LibspotifyWrapper.Search.Artist(searchPtr, i);
+					var artistPtr = LibspotifyWrapper.Search.Artist(searchPtr, i);
 					artists[i] = new SPArtist(artistPtr);
 				}
 
@@ -168,11 +166,8 @@ namespace MonoLibSpotify.Models
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				IntPtr linkPtr = LibspotifyWrapper.Link.CreateFromSearch(searchPtr);
-				if(linkPtr != IntPtr.Zero)
-					return new SPLink(linkPtr);
-				else
-					return null;
+			    var linkPtr = LibspotifyWrapper.Link.CreateFromSearch(searchPtr);
+			    return linkPtr != IntPtr.Zero ? new SPLink(linkPtr) : null;
 			}
 		}
 		
@@ -180,7 +175,7 @@ namespace MonoLibSpotify.Models
 		{
 			CheckDisposed(true);
 			
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			sb.AppendLine("[Search]");
 			sb.AppendLine("Error=" + Error);
 			sb.AppendLine("Tracks.Length=" + Tracks.Length);
@@ -208,17 +203,14 @@ namespace MonoLibSpotify.Models
 				{
 					
 				}
-				
-				if(searchPtr != IntPtr.Zero)
-				{
-					
-					LibspotifyWrapper.Search.Release(searchPtr);
-					searchPtr = IntPtr.Zero;
-				}			
+
+			    if (searchPtr == IntPtr.Zero) return;
+			    LibspotifyWrapper.Search.Release(searchPtr);
+			    searchPtr = IntPtr.Zero;
 			}
-			catch
+			catch(Exception e)
 			{
-				
+				Console.WriteLine(e);
 			}
 		}
 		
@@ -235,7 +227,7 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				bool result = searchPtr == IntPtr.Zero;
+				var result = searchPtr == IntPtr.Zero;
 				if(result && throwOnDisposed)
 					throw new ObjectDisposedException("Search");
 				

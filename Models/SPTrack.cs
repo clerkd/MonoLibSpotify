@@ -43,7 +43,7 @@ namespace MonoLibSpotify.Models
 			{
 				lock(LibspotifyWrapper.Mutex)
 				{
-					IntPtr trackPtr = LibspotifyWrapper.Link.AsTrack(link.linkPtr);
+					var trackPtr = LibspotifyWrapper.Link.AsTrack(link.linkPtr);
 					if(trackPtr != IntPtr.Zero)
 						result = new SPTrack(trackPtr);
 				}
@@ -59,11 +59,11 @@ namespace MonoLibSpotify.Models
 			
 			if(link.linkPtr != IntPtr.Zero)
 			{
-				IntPtr offsetPtr = IntPtr.Zero;
+				var offsetPtr = IntPtr.Zero;
 				
 				lock(LibspotifyWrapper.Mutex)
 				{
-					IntPtr trackPtr = LibspotifyWrapper.Link.AsTrackAndOffset(link.linkPtr, out offsetPtr);
+					var trackPtr = LibspotifyWrapper.Link.AsTrackAndOffset(link.linkPtr, out offsetPtr);
 					if(trackPtr != IntPtr.Zero)
 						result = new SPTrack(trackPtr);
 				}
@@ -78,16 +78,16 @@ namespace MonoLibSpotify.Models
 		#region Declarations
 		internal IntPtr trackPtr = IntPtr.Zero;
 		
-		private bool isLoaded = false;
-		private sp_error error = sp_error.RESOURCE_NOT_LOADED;
-		private SPAlbum album = null;
-		private SPArtist[] artists = null;
-		private string name = string.Empty;
-		private int duration = 0;
-		private int popularity = 0;
-		private int disc = 0;
-		private int index = 0;
-		private string linkString = string.Empty;
+		bool isLoaded;
+		sp_error error = sp_error.RESOURCE_NOT_LOADED;
+		SPAlbum album;
+		SPArtist[] artists;
+		string name;
+		int duration;
+		int popularity;
+		int disc;
+		int index;
+		string linkString;
 		#endregion
 		
 		#region Ctor
@@ -122,12 +122,12 @@ namespace MonoLibSpotify.Models
 			lock(LibspotifyWrapper.Mutex)
 			{
 				error = LibspotifyWrapper.Track.Error(trackPtr);
-				IntPtr albumPtr = LibspotifyWrapper.Track.Album(trackPtr);
+				var albumPtr = LibspotifyWrapper.Track.Album(trackPtr);
 				if (albumPtr != IntPtr.Zero)
 					album = new SPAlbum(albumPtr);
 				
 				artists = new SPArtist[LibspotifyWrapper.Track.NumArtists(trackPtr)];
-				for(int i = 0; i < artists.Length; i++)
+				for(var i = 0; i < artists.Length; i++)
 					artists[i] = new SPArtist(LibspotifyWrapper.Track.Artist(trackPtr, i));
 				
 				name = LibspotifyWrapper.GetString(LibspotifyWrapper.Track.Name(trackPtr), string.Empty);
@@ -137,7 +137,7 @@ namespace MonoLibSpotify.Models
 				disc = LibspotifyWrapper.Track.Disc(trackPtr);
 				index = LibspotifyWrapper.Track.Index(trackPtr);
 				
-				using(SPLink l = CreateLink(0))
+				using(var l = CreateLink(0))
 				{
 					linkString = l.ToString();	
 				}				
@@ -162,7 +162,7 @@ namespace MonoLibSpotify.Models
 				CheckLoaded();
 				lock (LibspotifyWrapper.Mutex)
 				{
-					bool result = LibspotifyWrapper.Track.IsStarred(trackPtr);
+					var result = LibspotifyWrapper.Track.IsStarred(trackPtr);
 					return result;
 				}
 			}
@@ -258,11 +258,8 @@ namespace MonoLibSpotify.Models
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				IntPtr linkPtr = LibspotifyWrapper.Link.CreateFromTrack(trackPtr, offset);
-				if(linkPtr != IntPtr.Zero)
-					return new SPLink(linkPtr);
-				else
-					return null;
+			    var linkPtr = LibspotifyWrapper.Link.CreateFromTrack(trackPtr, offset);
+			    return linkPtr != IntPtr.Zero ? new SPLink(linkPtr) : null;
 			}
 		}
 		
@@ -272,12 +269,12 @@ namespace MonoLibSpotify.Models
 			if (!isLoaded)
 				return;
 			
-			IntPtr arrayPtr = IntPtr.Zero;
+			var arrayPtr = IntPtr.Zero;
 			
 			try
 			{
-				int[] array = new int[] { trackPtr.ToInt32() };
-				int size = Marshal.SizeOf(arrayPtr) * array.Length;
+				var array = new [] { trackPtr.ToInt32() };
+				var size = Marshal.SizeOf(arrayPtr) * array.Length;
 				arrayPtr = Marshal.AllocHGlobal(size);
 				Marshal.Copy(array, 0, arrayPtr, array.Length);
 				LibspotifyWrapper.Track.SetStarred(session.SessionPointer, arrayPtr, 1, starred);
@@ -317,16 +314,14 @@ namespace MonoLibSpotify.Models
 				{
 					
 				}
-				
-				if(trackPtr != IntPtr.Zero)
-				{
-					LibspotifyWrapper.Track.Release(trackPtr);
-					trackPtr = IntPtr.Zero;
-				}			
+
+			    if (trackPtr == IntPtr.Zero) return;
+			    LibspotifyWrapper.Track.Release(trackPtr);
+			    trackPtr = IntPtr.Zero;
 			}
-			catch
+			catch(Exception e)
 			{
-				
+				Console.WriteLine(e);
 			}
 		}		
 		
@@ -343,7 +338,7 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				bool result = trackPtr == IntPtr.Zero;
+				var result = trackPtr == IntPtr.Zero;
 				if(result && throwOnDisposed)
 					throw new ObjectDisposedException("Track");
 				

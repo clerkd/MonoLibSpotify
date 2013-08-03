@@ -33,21 +33,15 @@ namespace MonoLibSpotify.Events
 {
 	public class MusicDeliveryEventArgs : EventArgs
 	{
-		private int channels;
-		private int rate;
-		private int type;
-		private byte[] samples;
-		private int frames;
-		
-		internal MusicDeliveryEventArgs(int channels, int type, int rate, byte[] samples, int frames)
+	    internal MusicDeliveryEventArgs(int channels, int type, int rate, byte[] samples, int frames)
 		{
-			this.channels = channels;
-			this.rate = rate;			
-			this.samples = samples;
-			this.frames = frames;
-			this.type = type;
+			Channels = channels;
+			Rate = rate;			
+			Samples = samples;
+			Frames = frames;
+			Type = type;
 			
-			this.ConsumedFrames = 0;
+			ConsumedFrames = 0;
 		}
 		
 		public int ConsumedFrames 
@@ -55,31 +49,16 @@ namespace MonoLibSpotify.Events
 			get;
 			set;			
 		}
-		
-		public int Frames 
-		{
-			get { return frames; }			
-		}
-		
-		public int Channels
-		{
-			get { return channels; }
-		}
-		
-		public int Rate
-		{
-			get { return rate; }
-		}	
 
-		public int Type
-		{
-			get { return type; }
-		}
-		
-		public byte[] Samples
-		{
-			get { return samples; }
-		}
+	    public int Frames { get; private set; }
+
+	    public int Channels { get; private set; }
+
+	    public int Rate { get; private set; }
+
+	    public int Type { get; private set; }
+
+	    public byte[] Samples { get; private set; }
 	}
 }
 

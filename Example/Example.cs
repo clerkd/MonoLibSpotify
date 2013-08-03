@@ -1,6 +1,10 @@
 /*
 Copyright (c) 2012-2013 Tim Ermilov, Clerkd, yamalight@gmail.com
 
+Based on source code from:
+https://github.com/jonasl/libspotify-sharp
+Copyright (c) 2009 Jonas Larsson, jonas@hallerud.se
+
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
@@ -24,35 +28,29 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 
-using MonoTouch.Foundation;
 using MonoTouch.AudioToolbox;
 
-using MonoLibSpotify;
 using MonoLibSpotify.Events;
 using MonoLibSpotify.Models;
 using MonoLibSpotify.Player;
 
 namespace MonoLibSpotify
 {
-	/*
-	 * Example class showing how to use bindings in iOS app
-	 */
 	public class Example
 	{
 		#region spotifyConfig
 		byte[] appKey = {
-			0x01, 0x02, 0x03, 0x04, // your app key here
+			0x01, 0x02, 0x03, 0x04 // your app key here
 		};
-		string userAgent = "com.example.App"; // your app user agent
+		const string userAgent = "com.example.App";
 		#endregion
 		
 		// libspotify reference
 		LibSpotify sp;
 
-		// spotify player 
+		// player 
 		SPPlayeriOS player;
 		
 		public Example ()
@@ -68,8 +66,7 @@ namespace MonoLibSpotify
 
 		public Example (string user, string pass) : this ()
 		{
-			// login on creation
-			sp.LogIn(user, pass);
+			Login(user, pass);
 		}
 
 		void initSpotify ()
@@ -78,7 +75,7 @@ namespace MonoLibSpotify
 			Console.WriteLine("Starting spotify init");
 			sp = new LibSpotify(appKey, userAgent);
 			
-			// assign session events
+			// assign events
 			sp.CurrentSession.OnConnectionError += HandleOnConnectionError;
 			sp.CurrentSession.OnLoggedOut += HandleOnLoggedOut;
 			sp.CurrentSession.OnLoginComplete += HandleOnLoginComplete;
@@ -91,7 +88,6 @@ namespace MonoLibSpotify
 			sp.CurrentSession.OnException += HandleOnException;
 			sp.CurrentSession.OnStreamingError += HandleOnStreamingError;
 		}
-
 		void initPlayer ()
 		{
 			// init audio session
@@ -100,6 +96,12 @@ namespace MonoLibSpotify
 			
 			// create player
 			player = new SPPlayeriOS();
+		}
+		
+		public void Login(string user, string pass, bool saveIfSuccess = false)
+		{
+			// login
+			sp.LogIn(user, pass);
 		}
 		
 		public void Logout (bool forget = true)
@@ -127,7 +129,7 @@ namespace MonoLibSpotify
 		{
 			Console.WriteLine("SPOTIFY: searching for "+query);
 			
-			// search for 50 songs
+			// search for tracks only
 			sp.CurrentSession.Search(query, 0, 50, 0, 0, 0, 0, 0, 0, sp_search_type.STANDARD, null);
 		}
 
@@ -137,7 +139,7 @@ namespace MonoLibSpotify
 		void HandleOnLoginComplete (SPSession sender, SessionEventArgs e)
 		{
 			Console.WriteLine ("Login result: " + e.Status);
-			string error = "";
+			var error = "";
 			switch (e.Status) {
 			case sp_error.USER_NEEDS_PREMIUM:
 				error = "You need to have premium account! Please, buy one or use another network.";
@@ -152,13 +154,11 @@ namespace MonoLibSpotify
 
 			// if login was successful, find some music to play
 			if (e.Status == sp_error.OK) {
-				// search for muse - bliss
+				// search
 				Search ("Muse Bliss");
 			} else {
 				// report error
 				Console.WriteLine(error);
-				// do something with error text
-				// ...
 			}
 		}
 		
@@ -166,43 +166,38 @@ namespace MonoLibSpotify
 		{
 			Console.WriteLine ("SPOTIFY: Search returned:{0}{1}", Environment.NewLine, e.Result);
 
-			// if search was succesfull
-			if (e.Result.Tracks.Length > 0) {
-				// load first track and play
-				sp.CurrentSession.PlayerLoad (e.Result.Tracks [0]);
-				sp.CurrentSession.PlayerPlay (true);
-				// trigger playback in player
-				player.Play ();
-			}
+		    if (e.Result.Tracks.Length <= 0) return;
+		    // load first track and play
+		    sp.CurrentSession.PlayerLoad (e.Result.Tracks [0]);
+		    sp.CurrentSession.PlayerPlay (true);
+		    // trigger playback in player
+		    player.Play ();
 		}
 		
 		void HandleOnMusicDelivery(SPSession sender, MusicDeliveryEventArgs e)
 		{
-			// if received more than 0 samples, do work
 			if(e.Samples.Length > 0)
 			{
-				// if player audio description doesn't matches one in delivery - update it
-				if( player.AudioDescription.SampleRate != e.Rate || player.AudioDescription.ChannelsPerFrame != e.Channels ){
-					AudioStreamBasicDescription desc = new MonoTouch.AudioToolbox.AudioStreamBasicDescription();
-					desc.BitsPerChannel = 16;
-					desc.FramesPerPacket = 1;
-					desc.Reserved = 0;
-					desc.FormatFlags = AudioFormatFlags.LinearPCMIsSignedInteger | AudioFormatFlags.LinearPCMIsPacked;
-					desc.Format = AudioFormatType.LinearPCM;
-					desc.SampleRate = e.Rate;
-					desc.BytesPerFrame = e.Channels * sizeof(Int16);
+				if (player.AudioDescription.SampleRate.Equals (e.Rate) || player.AudioDescription.ChannelsPerFrame != e.Channels) {
+					var desc = new MonoTouch.AudioToolbox.AudioStreamBasicDescription {
+						BitsPerChannel = 16,
+						FramesPerPacket = 1,
+						Reserved = 0,
+						FormatFlags = AudioFormatFlags.LinearPCMIsSignedInteger | AudioFormatFlags.LinearPCMIsPacked,
+						Format = AudioFormatType.LinearPCM,
+						SampleRate = e.Rate,
+						BytesPerFrame = e.Channels*sizeof (Int16)
+					};
 					desc.BytesPerPacket = desc.BytesPerFrame;
 					desc.ChannelsPerFrame = e.Channels;
 					player.AudioDescription = desc;
 				}
 				
-				// consume frames with player
 				// Don't forget to set how many frames we consumed
 				e.ConsumedFrames = player.EnqueFrames(e.Channels, e.Rate, e.Samples, e.Frames);
 			}
 			else
 			{
-				// set consumed frames to 0 if there's nothing received
 				e.ConsumedFrames = 0;
 			}
 		}
@@ -213,11 +208,8 @@ namespace MonoLibSpotify
 			sp.CurrentSession.PlayerPlay(false);
 			sp.CurrentSession.PlayerUnload();
 
-			// Calculate seconds left in player buffer
-			int bufferLag = (int)player.TargetBufferLength * 1000 + 100;
-			// sleep for lag time
-			Thread.Sleep(bufferLag);
-
+			// Samples left in player buffer. Player lags 1000 ms
+			Thread.Sleep(1100); 
 			// stop player, flush buffer & close
 			player.Stop();
 			player.FlushAndClose();
@@ -230,36 +222,27 @@ namespace MonoLibSpotify
 		void HandleOnPlayTokenLost(SPSession sender, SessionEventArgs e)
 		{
 			Console.Out.WriteLine("Play token lost");
-			// do something with lost toked
-			// ...
+			//playbackDone.Set();
 		}
 		
 		void HandleOnMessageToUser(SPSession sender, SessionEventArgs e)
 		{			
 			Console.WriteLine("Message: " + e.Message);
-			// process message
-			// ...
 		}
 		
 		void HandleOnLogMessage(SPSession sender, SessionEventArgs e)
 		{
 			Console.WriteLine("Log: " + e.Message);
-			// for debugging
-			// ...
 		}
 		
 		void HandleOnLoggedOut(SPSession sender, SessionEventArgs e)
 		{	
 			Console.WriteLine("Logged out from Spotify");
-			// handle logout
-			// ...
 		}
 		
 		void HandleOnConnectionError(SPSession sender, SessionEventArgs e)
 		{
 			Console.WriteLine("Connection error: " + e.Status);
-			// handle connection error
-			// ...
 		}
 	}
 }

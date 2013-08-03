@@ -120,8 +120,8 @@ namespace MonoLibSpotify.Models
 		search_complete_cb_delegate search_complete_cb;
 		image_loaded_cb_delegate image_loaded_cb;
 
-		Thread mainThread = null;
-		Thread eventThread = null;
+		Thread mainThread;
+		Thread eventThread;
 
 		ManualResetEvent loginHandle = null;
 		ManualResetEvent logoutHandle = null;
@@ -151,12 +151,15 @@ namespace MonoLibSpotify.Models
 		{
 			get {
 				try {
-					if(pointer != IntPtr.Zero) {
-						lock(LibspotifyWrapper.Mutex)
-							return LibspotifyWrapper.Session.ConnectionState(pointer);
-					} else {
-						return sp_connectionstate.UNDEFINED;
-					}
+				    if (pointer == IntPtr.Zero)
+				    {
+				        return sp_connectionstate.UNDEFINED;
+				    }
+				    else
+				    {
+				        lock (LibspotifyWrapper.Mutex)
+				            return LibspotifyWrapper.Session.ConnectionState(pointer);
+				    }
 				} catch {
 					return sp_connectionstate.UNDEFINED;
 				}
@@ -170,9 +173,9 @@ namespace MonoLibSpotify.Models
 			{
 				Console.WriteLine("SPOTIFY SESSION: searching for "+query);
 
-				int id = UserStateId;				
+				var id = UserStateId;				
 				states[id] = state;
-				IntPtr browsePtr = LibspotifyWrapper.Search.Create(SessionPointer, query, trackOffset, trackCount, albumOffset, albumCount, artistOffset, artistCount, playlistOffset, 
+				var browsePtr = LibspotifyWrapper.Search.Create(SessionPointer, query, trackOffset, trackCount, albumOffset, albumCount, artistOffset, artistCount, playlistOffset, 
 				                                                  playlistCount, searchType, Marshal.GetFunctionPointerForDelegate(search_complete_cb), new IntPtr(id));				
 				return browsePtr != IntPtr.Zero;
 			}
@@ -182,9 +185,9 @@ namespace MonoLibSpotify.Models
 		{	
 			lock(LibspotifyWrapper.Mutex)
 			{
-				int id = UserStateId; 
+				var id = UserStateId; 
 				states[id] = state;
-				IntPtr browsePtr = LibspotifyWrapper.Browse.Album.Create(SessionPointer, album.albumPtr,
+				var browsePtr = LibspotifyWrapper.Browse.Album.Create(SessionPointer, album.albumPtr,
 				                                                    Marshal.GetFunctionPointerForDelegate(albumbrowse_complete_cb), new IntPtr(id));
 				return browsePtr != IntPtr.Zero;
 			}
@@ -194,9 +197,9 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				int id = UserStateId;
+				var id = UserStateId;
 				states[id] = state;
-				IntPtr browsePtr = LibspotifyWrapper.Browse.Artist.Create(SessionPointer, artist.artistPtr, 
+				var browsePtr = LibspotifyWrapper.Browse.Artist.Create(SessionPointer, artist.artistPtr, 
 				                                                     Marshal.GetFunctionPointerForDelegate(artistbrowse_complete_cb), new IntPtr(id));
 				return browsePtr != IntPtr.Zero;
 			}			
@@ -210,23 +213,23 @@ namespace MonoLibSpotify.Models
 			if (id.Length != 40)
 				throw new ArgumentException("invalid id");
 			
-			byte[] idArray = LibspotifyWrapper.StringToImageId(id);
+			var idArray = LibspotifyWrapper.StringToImageId(id);
 			
 			if(idArray.Length != 20)
 				throw new Exception("Internal error in LoadImage");
 			
 			lock (LibspotifyWrapper.Mutex)
 			{
-				IntPtr idPtr = IntPtr.Zero;
+				var idPtr = IntPtr.Zero;
 				try
 				{
 					idPtr = Marshal.AllocHGlobal(idArray.Length);
 					Marshal.Copy(idArray, 0, idPtr, idArray.Length);
 					
-					int stateId = UserStateId;
+					var stateId = UserStateId;
 					states[stateId] = state;
 					
-					IntPtr imagePtr = LibspotifyWrapper.Image.Create(SessionPointer, idPtr);
+					var imagePtr = LibspotifyWrapper.Image.Create(SessionPointer, idPtr);
 					if (LibspotifyWrapper.Image.IsLoaded(imagePtr))
 						ImageLoadedCallback(imagePtr, new IntPtr(stateId));
 					else
@@ -249,7 +252,7 @@ namespace MonoLibSpotify.Models
 				if(sessions.Count > 0) {
 					throw new InvalidOperationException("libspotify can only handle one session at the moment");
 				} else {
-					SPSession instance = new SPSession(applicationKey, uAgent, loadPolicy);
+					var instance = new SPSession(applicationKey, uAgent, loadPolicy);
 					sessions.Add(instance.SessionPointer, instance);
 					return instance;
 				}
@@ -258,18 +261,15 @@ namespace MonoLibSpotify.Models
 
 		private static SPSession GetSession(IntPtr sessionPtr)
 		{
-			SPSession s;
-			if(sessions.TryGetValue(sessionPtr, out s))
-				return s;
-			else
-				return null;
+		    SPSession s;
+		    return sessions.TryGetValue(sessionPtr, out s) ? s : null;
 		}
 
-		public bool LogIn(string username, string password, bool rememberme = false)
+	    public bool LogIn(string username, string password, bool rememberme = false)
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				sp_error res = LibspotifyWrapper.Session.Login(pointer, username, password, rememberme, null);
+				var res = LibspotifyWrapper.Session.Login(pointer, username, password, rememberme, null);
 				return res == sp_error.OK;
 			}
 		}
@@ -278,7 +278,7 @@ namespace MonoLibSpotify.Models
 		{
 			lock(LibspotifyWrapper.Mutex)
 			{
-				sp_error res = LibspotifyWrapper.Session.ReLogin(pointer);
+				var res = LibspotifyWrapper.Session.ReLogin(pointer);
 				return res == sp_error.OK;
 			}
 		}
@@ -289,7 +289,7 @@ namespace MonoLibSpotify.Models
 			{
 				if (ConnectionState == sp_connectionstate.LOGGED_IN)
 				{
-					sp_error res = LibspotifyWrapper.Session.Logout(pointer);
+					var res = LibspotifyWrapper.Session.Logout(pointer);
 					
 					if(res != sp_error.OK)
 						throw new SpotifyException(res);
@@ -309,19 +309,21 @@ namespace MonoLibSpotify.Models
 		static SPSession()
 		{
 			// make callbacks
-			callbacks = new sp_session_callbacks();
-			callbacks.connection_error = Marshal.GetFunctionPointerForDelegate(connection_error);
-			callbacks.logged_in = Marshal.GetFunctionPointerForDelegate(logged_in);
-			callbacks.logged_out = Marshal.GetFunctionPointerForDelegate(logged_out);
-			callbacks.log_message = Marshal.GetFunctionPointerForDelegate(log_message);
-			callbacks.message_to_user = Marshal.GetFunctionPointerForDelegate(message_to_user);
-			callbacks.metadata_updated = Marshal.GetFunctionPointerForDelegate(metadata_updated);
-			callbacks.music_delivery = Marshal.GetFunctionPointerForDelegate(music_delivery);
-			callbacks.notify_main_thread = Marshal.GetFunctionPointerForDelegate(notify_main_thread);
-			callbacks.play_token_lost = Marshal.GetFunctionPointerForDelegate(play_token_lost);				
-			callbacks.end_of_track = Marshal.GetFunctionPointerForDelegate(end_of_track);
-			callbacks.streaming_error = Marshal.GetFunctionPointerForDelegate(streaming_error);
-			callbacks.userinfo_updated = Marshal.GetFunctionPointerForDelegate(userinfo_updated);
+			callbacks = new sp_session_callbacks
+			                {
+			                    connection_error = Marshal.GetFunctionPointerForDelegate(connection_error),
+			                    logged_in = Marshal.GetFunctionPointerForDelegate(logged_in),
+			                    logged_out = Marshal.GetFunctionPointerForDelegate(logged_out),
+			                    log_message = Marshal.GetFunctionPointerForDelegate(log_message),
+			                    message_to_user = Marshal.GetFunctionPointerForDelegate(message_to_user),
+			                    metadata_updated = Marshal.GetFunctionPointerForDelegate(metadata_updated),
+			                    music_delivery = Marshal.GetFunctionPointerForDelegate(music_delivery),
+			                    notify_main_thread = Marshal.GetFunctionPointerForDelegate(notify_main_thread),
+			                    play_token_lost = Marshal.GetFunctionPointerForDelegate(play_token_lost),
+			                    end_of_track = Marshal.GetFunctionPointerForDelegate(end_of_track),
+			                    streaming_error = Marshal.GetFunctionPointerForDelegate(streaming_error),
+			                    userinfo_updated = Marshal.GetFunctionPointerForDelegate(userinfo_updated)
+			                };
 		}
 
 		SPSession (byte[] appKey, string userAgent, SPAsyncLoadingPolicy loadPolicy)
@@ -341,15 +343,17 @@ namespace MonoLibSpotify.Models
 			if( !Directory.Exists(tmp) ) Directory.CreateDirectory(tmp);
 
 			// make new config
-			sp_session_config config = new sp_session_config();
-			config.api_version = LibspotifyWrapper.API_VERSION;
-			config.user_agent = userAgent;
-			// folders
-			config.settings_location = spotifyDirectory.ToString();
-			config.cache_location = cache.ToString();
+			var config = new sp_session_config
+			                 {
+			                     api_version = LibspotifyWrapper.API_VERSION,
+			                     user_agent = userAgent,
+			                     settings_location = spotifyDirectory.ToString(),
+			                     cache_location = cache.ToString()
+			                 };
+		    // folders
 
-			// callbacks
-			int size = Marshal.SizeOf(callbacks);
+		    // callbacks
+			var size = Marshal.SizeOf(callbacks);
 			config.callbacks = Marshal.AllocHGlobal(size);
 			Marshal.StructureToPtr(callbacks, config.callbacks, true);
 
@@ -361,7 +365,7 @@ namespace MonoLibSpotify.Models
 				config.application_key_size = appKey.Length;
 
 				pointer = IntPtr.Zero;
-				sp_error createErrorCode = LibspotifyWrapper.Session.Create(ref config, out pointer);
+				var createErrorCode = LibspotifyWrapper.Session.Create(ref config, out pointer);
 				if (createErrorCode != sp_error.OK) {
 					pointer = IntPtr.Zero;
 					Console.WriteLine("error creating session");
@@ -373,13 +377,11 @@ namespace MonoLibSpotify.Models
 					search_complete_cb = new search_complete_cb_delegate(SearchCompleteCallback);
 					image_loaded_cb = new image_loaded_cb_delegate(ImageLoadedCallback);
 
-					mainThread = new Thread(new ThreadStart(MainThread));
-					mainThread.IsBackground = true;
-					mainThread.Start();
+					mainThread = new Thread(new ThreadStart(MainThread)) {IsBackground = true};
+				    mainThread.Start();
 					
-					eventThread = new Thread(new ThreadStart(EventThread));
-					eventThread.IsBackground = true;
-					eventThread.Start();
+					eventThread = new Thread(new ThreadStart(EventThread)) {IsBackground = true};
+				    eventThread.Start();
 				}
 			}finally{
 				if(config.application_key != IntPtr.Zero)
@@ -392,7 +394,7 @@ namespace MonoLibSpotify.Models
 		void MainThread()
 		{			
 			// FIXME Fix this when sessions can be destroyed
-			int waitTime = 0;
+			var waitTime = 0;
 			
 			while(true) {
 				mainThreadNotification.WaitOne(waitTime, false);
@@ -411,7 +413,7 @@ namespace MonoLibSpotify.Models
 		
 		void EventThread()
 		{
-			List<EventWorkItem> localList = new List<EventWorkItem>();
+			var localList = new List<EventWorkItem>();
 			
 			// FIXME Fix this when sessions can be destroyed
 			while(true) {				
@@ -423,7 +425,7 @@ namespace MonoLibSpotify.Models
 						localList.Add(eventQueue.Dequeue());
 				}
 				
-				foreach(EventWorkItem eventWorkItem in localList){
+				foreach(var eventWorkItem in localList){
 					try {
 						eventWorkItem.Execute();					
 					} catch(Exception ex) {
@@ -449,7 +451,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(logged_in_delegate))]
 		static void LoggedInCallback(IntPtr sessionPtr, sp_error error)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 
@@ -462,14 +464,18 @@ namespace MonoLibSpotify.Models
 				try {
 					s.loginResult = error;
 					s.loginHandle.Set();
-				} catch { }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
 			}
 		}
 
 		[MonoPInvokeCallback (typeof(logged_out_delegate))]
 		static void LoggedOutCallback(IntPtr sessionPtr)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 
@@ -492,8 +498,9 @@ namespace MonoLibSpotify.Models
 					if (s.logoutHandle != null)
 						s.logoutHandle.Set();
 				}
-				catch
-				{
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
 				}
 			}
 		}
@@ -501,7 +508,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(connection_error_delegate))]
 		static void ConnectionErrorCallback(IntPtr sessionPtr, sp_error error)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 
@@ -511,7 +518,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(log_message_delegate))]
 		static void LogMessageCallback(IntPtr sessionPtr, string message)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 
@@ -524,7 +531,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(metadata_updated_delegate))]
 		static void MetadataUpdatedCallback(IntPtr sessionPtr)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -534,7 +541,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(message_to_user_delegate))]
 		static void MessageToUserCallback(IntPtr sessionPtr, string message)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -544,7 +551,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(play_token_lost_delegate))]
 		static void PlayTokenLostCallback(IntPtr sessionPtr)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -554,7 +561,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(notify_main_thread_delegate))]
 		static void NotifyMainThreadCallback(IntPtr sessionPtr)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -564,24 +571,24 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(music_delivery_delegate))]
 		static int MusicDeliveryCallback(IntPtr sessionPtr, IntPtr formatPtr, IntPtr framesPtr, int num_frames)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return 0;
 
 			if(num_frames == 0)
 				return 0;
 			
-			int consumed = 0;
+			var consumed = 0;
 			
 			byte[] samplesBytes = null;
-			sp_audioformat format = (sp_audioformat)Marshal.PtrToStructure(formatPtr, typeof(sp_audioformat));
+			var format = (sp_audioformat)Marshal.PtrToStructure(formatPtr, typeof(sp_audioformat));
 
 			samplesBytes = new byte[num_frames * format.channels * 2];
 			Marshal.Copy(framesPtr, samplesBytes, 0, samplesBytes.Length);
 			
 			if(s.OnMusicDelivery != null)
 			{
-				MusicDeliveryEventArgs e = new MusicDeliveryEventArgs(format.channels, format.sample_type, format.sample_rate, samplesBytes, num_frames);
+				var e = new MusicDeliveryEventArgs(format.channels, format.sample_type, format.sample_rate, samplesBytes, num_frames);
 				s.OnMusicDelivery(s, e);
 				
 				consumed = e.ConsumedFrames;
@@ -593,7 +600,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(end_of_track_delegate))]
 		static void EndOfTrackCallback(IntPtr sessionPtr)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -603,7 +610,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(streaming_error_delegate))]
 		static void StreamingErrorCallback(IntPtr sessionPtr, sp_error error)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -613,7 +620,7 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(userinfo_updated_delegate))]
 		static void UserinfoUpdatedCallback(IntPtr sessionPtr)
 		{
-			SPSession s = GetSession(sessionPtr);
+			var s = GetSession(sessionPtr);
 			if (s == null)
 				return;
 			
@@ -624,15 +631,15 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(albumbrowse_complete_cb_delegate))]
 	 	static void AlbumBrowseCompleteCallback(IntPtr albumBrowsePtr, IntPtr userDataPtr)
 		{
-			AlbumBrowse albumBrowse = new AlbumBrowse(albumBrowsePtr);
-			int id = userDataPtr.ToInt32();
+			var albumBrowse = new AlbumBrowse(albumBrowsePtr);
+			var id = userDataPtr.ToInt32();
 
 			SPSession s = null;
-			foreach(KeyValuePair<IntPtr, SPSession> kp in sessions){
+			foreach(var kp in sessions){
 				s = kp.Value;
 			}
 			
-			object state = s.states.ContainsKey(id) ? s.states[id] : null;
+			var state = s.states.ContainsKey(id) ? s.states[id] : null;
 			
 			if (id <= short.MaxValue)
 			{
@@ -653,16 +660,16 @@ namespace MonoLibSpotify.Models
 		static void ArtistBrowseCompleteCallback(IntPtr artistBrowsePtr, IntPtr userDataPtr)
 		{
 			SPSession s = null;
-			foreach(KeyValuePair<IntPtr, SPSession> kp in sessions){
+			foreach(var kp in sessions){
 				s = kp.Value;
 			}
 
 			try
 			{
-				ArtistBrowse artistBrowse = new ArtistBrowse(artistBrowsePtr);
-				int id = userDataPtr.ToInt32();
+				var artistBrowse = new ArtistBrowse(artistBrowsePtr);
+				var id = userDataPtr.ToInt32();
 				
-				object state = s.states.ContainsKey(id) ? s.states[id] : null;
+				var state = s.states.ContainsKey(id) ? s.states[id] : null;
 				
 				if (id <= short.MaxValue)
 				{
@@ -687,16 +694,16 @@ namespace MonoLibSpotify.Models
 		[MonoPInvokeCallback (typeof(search_complete_cb_delegate))]
 		static void SearchCompleteCallback(IntPtr searchPtr, IntPtr userDataPtr)
 		{
-			SPSearch search = new SPSearch(searchPtr);
+			var search = new SPSearch(searchPtr);
 
-			int id = userDataPtr.ToInt32();
+			var id = userDataPtr.ToInt32();
 
 			SPSession s = null;
-			foreach(KeyValuePair<IntPtr, SPSession> kp in sessions){
+			foreach(var kp in sessions){
 				s = kp.Value;
 			}
 
-			object state = s.states.ContainsKey(id) ? s.states[id] : null;
+			var state = s.states.ContainsKey(id) ? s.states[id] : null;
 			
 			if (id <= short.MaxValue)
 			{
@@ -717,10 +724,10 @@ namespace MonoLibSpotify.Models
 		void ImageLoadedCallback(IntPtr imagePtr, IntPtr userDataPtr)
 		{
 			
-			int id = userDataPtr.ToInt32();
-			object state = states.ContainsKey(id) ? states[id] : null;
+			var id = userDataPtr.ToInt32();
+			var state = states.ContainsKey(id) ? states[id] : null;
 			ManualResetEvent wh = null;
-			bool isSync = id > short.MaxValue;
+			var isSync = id > short.MaxValue;
 			if (isSync)
 			{
 				if (state == null || !(state is ManualResetEvent))
@@ -741,16 +748,16 @@ namespace MonoLibSpotify.Models
 				 * the complaints about this. Yay for them.
 				 */
 				
-				IntPtr lengthPtr = IntPtr.Zero;				
-				IntPtr dataPtr = LibspotifyWrapper.Image.Data(imagePtr, out lengthPtr);
+				var lengthPtr = IntPtr.Zero;				
+				var dataPtr = LibspotifyWrapper.Image.Data(imagePtr, out lengthPtr);
 				
-				int length = lengthPtr.ToInt32();
+				var length = lengthPtr.ToInt32();
 				
-				byte[] imageData = new byte[length];
+				var imageData = new byte[length];
 				Marshal.Copy(dataPtr, imageData, 0, imageData.Length);
 
-				NSData data = NSData.FromArray(imageData);
-				UIImage bmp = UIImage.LoadFromData(data);
+				var data = NSData.FromArray(imageData);
+				var bmp = UIImage.LoadFromData(data);
 				
 				if (!isSync)
 				{
@@ -800,7 +807,7 @@ namespace MonoLibSpotify.Models
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				sp_error err = LibspotifyWrapper.Player.Load(SessionPointer, track.trackPtr);
+				var err = LibspotifyWrapper.Player.Load(SessionPointer, track.trackPtr);
 				if (err == sp_error.OK)
 					track.CheckLoaded();
 				

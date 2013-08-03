@@ -40,13 +40,10 @@ namespace MonoLibSpotify.Browsers
 	{
 		#region Declarations
 		private sp_error error;
-		private SPArtist artist;		
-		private List<string> portraitIds;
-		private SPTrack[] tracks;
-		private SPAlbum[] albums;
-		private SPArtist[] similarArtists;
-		private string biography;		
-		#endregion
+	    private List<string> portraitIds;
+	    private SPAlbum[] albums;
+
+	    #endregion
 		
 		#region Ctor
 		internal ArtistBrowse(IntPtr artistBrowsePtr)
@@ -56,43 +53,43 @@ namespace MonoLibSpotify.Browsers
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				IntPtr strPtr = IntPtr.Zero;
+				var strPtr = IntPtr.Zero;
 				
 				error = LibspotifyWrapper.Browse.Artist.Error(artistBrowsePtr);
-				artist = new SPArtist(LibspotifyWrapper.Browse.Artist.GetArtist(artistBrowsePtr));
+				Artist = new SPArtist(LibspotifyWrapper.Browse.Artist.GetArtist(artistBrowsePtr));
 				
 				portraitIds = new List<string>(LibspotifyWrapper.Browse.Artist.NumPortraits(artistBrowsePtr));
-				for(int i = 0; i < portraitIds.Count; i++)
+				for(var i = 0; i < portraitIds.Count; i++)
 				{
-					IntPtr portraitIdPtr = LibspotifyWrapper.Browse.Artist.Portrait(artistBrowsePtr, i);
-					byte[] portraitId = new byte[20];
+					var portraitIdPtr = LibspotifyWrapper.Browse.Artist.Portrait(artistBrowsePtr, i);
+					var portraitId = new byte[20];
 					Marshal.Copy(portraitIdPtr, portraitId, 0, portraitId.Length);
 					portraitIds.Add(LibspotifyWrapper.ImageIdToString(portraitId));
 				}
 				
-				tracks = new SPTrack[LibspotifyWrapper.Browse.Artist.NumTracks(artistBrowsePtr)];
-				for(int i = 0; i < tracks.Length; i++)
+				Tracks = new SPTrack[LibspotifyWrapper.Browse.Artist.NumTracks(artistBrowsePtr)];
+				for(var i = 0; i < Tracks.Length; i++)
 				{
-					IntPtr trackPtr = LibspotifyWrapper.Browse.Artist.Track(artistBrowsePtr, i);
-					tracks[i] = new SPTrack(trackPtr);
+					var trackPtr = LibspotifyWrapper.Browse.Artist.Track(artistBrowsePtr, i);
+					Tracks[i] = new SPTrack(trackPtr);
 				}
 				
 				albums = new SPAlbum[LibspotifyWrapper.Browse.Artist.NumAlbums(artistBrowsePtr)];
-				for(int i = 0; i < albums.Length; i++)
+				for(var i = 0; i < albums.Length; i++)
 				{
-					IntPtr albumPtr = LibspotifyWrapper.Browse.Artist.Album(artistBrowsePtr, i);
+					var albumPtr = LibspotifyWrapper.Browse.Artist.Album(artistBrowsePtr, i);
 					albums[i] = new SPAlbum(albumPtr);
 				}
 				
-				similarArtists = new SPArtist[LibspotifyWrapper.Browse.Artist.NumSimilarArtists(artistBrowsePtr)];
-				for(int i = 0; i < similarArtists.Length; i++)
+				SimilarArtists = new SPArtist[LibspotifyWrapper.Browse.Artist.NumSimilarArtists(artistBrowsePtr)];
+				for(var i = 0; i < SimilarArtists.Length; i++)
 				{
-					IntPtr artistPtr = LibspotifyWrapper.Browse.Artist.SimilarArtist(artistBrowsePtr, i);
-					similarArtists[i] = new SPArtist(artistPtr);
+					var artistPtr = LibspotifyWrapper.Browse.Artist.SimilarArtist(artistBrowsePtr, i);
+					SimilarArtists[i] = new SPArtist(artistPtr);
 				}
 				
 				strPtr = LibspotifyWrapper.Browse.Album.Review(artistBrowsePtr);
-				biography = LibspotifyWrapper.GetString(strPtr, string.Empty);
+				Biography = LibspotifyWrapper.GetString(strPtr, string.Empty);
 				
 				LibspotifyWrapper.Browse.Artist.Release(artistBrowsePtr);
 			}
@@ -107,64 +104,41 @@ namespace MonoLibSpotify.Browsers
 				return error;	
 			}
 		}
-		
-		public SPArtist Artist
-		{
-			get
-			{
-				return artist;	
-			}
-		}
-		
-		public string[] PortraitIds
+
+	    public SPArtist Artist { get; private set; }
+
+	    public string[] PortraitIds
 		{
 			get
 			{
 				return portraitIds.ToArray();
 			}
 		}
-		
-		public SPTrack[] Tracks
-		{
-			get
-			{
-				return tracks;
-			}
-		}
-		
-		public SPArtist[] SimilarArtists
-		{
-			get
-			{
-				return similarArtists;
-			}
-		}		
-		
-		public string Biography
-		{
-			get
-			{
-				return biography;
-			}
-		}
-		#endregion	
+
+	    public SPTrack[] Tracks { get; private set; }
+
+	    public SPArtist[] SimilarArtists { get; private set; }
+
+	    public string Biography { get; private set; }
+
+	    #endregion	
 		
 		#region Public methods
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			sb.AppendLine("[ArtistBrowse]");
 			sb.AppendLine("Error=" + Error);			
 			sb.AppendLine(Artist.ToString());			
 			sb.AppendLine("PortraitsIds.Length=" + PortraitIds.Length);			
-			foreach(string portraitId in PortraitIds)
+			foreach(var portraitId in PortraitIds)
 				sb.AppendLine(portraitId);		 
 			
 			sb.AppendLine("Tracks.Length=" + Tracks.Length);
-			foreach(SPTrack t in Tracks)
+			foreach(var t in Tracks)
 				sb.AppendLine(t.ToString());			
 			sb.AppendLine("SimilarArtists.Length=" + SimilarArtists.Length);
-			foreach(SPArtist a in SimilarArtists)
+			foreach(var a in SimilarArtists)
 				sb.AppendLine(a.ToString());
 			
 			sb.AppendFormat("Biography:{0}{1}", Environment.NewLine, Biography);

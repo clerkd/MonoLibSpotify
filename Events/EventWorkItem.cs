@@ -46,7 +46,7 @@ namespace MonoLibSpotify.Events
 		{
 			if(handler != null)
 			{
-				handler.DynamicInvoke(this.args);       
+				handler.DynamicInvoke(args);       
 			}
 		}
 	}

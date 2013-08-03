@@ -1,6 +1,10 @@
 /*
 Copyright (c) 2012-2013 Tim Ermilov, Clerkd, yamalight@gmail.com
 
+Based on source code from:
+https://github.com/jonasl/libspotify-sharp
+Copyright (c) 2009 Jonas Larsson, jonas@hallerud.se
+
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
@@ -24,18 +28,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
-using MonoTouch.CoreFoundation;
-using MonoTouch.CoreMedia;
-using MonoTouch.AVFoundation;
 using MonoTouch.AudioToolbox;
-using MonoTouch.AudioUnit;
-using MonoTouch.AudioUnitWrapper;
-
-using MonoLibSpotify.Models;
 
 namespace MonoLibSpotify.Player
 {
@@ -67,7 +64,7 @@ namespace MonoLibSpotify.Player
 		List<AudioBuffer> outputBuffers;
 		AudioBuffer currentBuffer;
 		OutputAudioQueue OutputQueue;
-		bool buffersInited = false;
+		bool buffersInited;
 		// Maximum buffers
 		int maxBufferCount = 5;
 		// Keep track of all queued up buffers, so that we know that the playback finished
@@ -152,10 +149,10 @@ namespace MonoLibSpotify.Player
 		{
 			// create buffers
 			outputBuffers = new List<AudioBuffer>();
-			for (int i = 0; i < MaxBufferCount; i++) {
+			for (var i = 0; i < MaxBufferCount; i++) {
 				IntPtr outBuffer;
 				OutputQueue.AllocateBuffer (BufferSize, out outBuffer);
-				outputBuffers.Add (new AudioBuffer () { Buffer = outBuffer });
+				outputBuffers.Add (new AudioBuffer { Buffer = outBuffer });
 			}
 			currentBuffer = outputBuffers[0];
 
@@ -167,7 +164,7 @@ namespace MonoLibSpotify.Player
 			if( Paused ) return 0;
 			if( !buffersInited ) return 0;
 
-			int consumedFrames = 0;
+			var consumedFrames = 0;
 			
 			if (samples != null && samples.Length > 0)
 			{
@@ -175,7 +172,7 @@ namespace MonoLibSpotify.Player
 				ParseBytes(samples, samples.Length, false, false);
 
 				// report consumed frames
-				double time = (double)frames / desc.SampleRate * 1000;
+				var time = (double)frames / desc.SampleRate * 1000;
 				CurrentTime += time;
 				if( didOutputTime != null ) didOutputTime.DynamicInvoke(time);
 
@@ -197,21 +194,20 @@ namespace MonoLibSpotify.Player
 		
 		public void ResetOutputQueue ()
 		{
-			if (OutputQueue != null) {
-				OutputQueue.Stop (true);
-				OutputQueue.Flush ();
-				OutputQueue.Reset ();
+		    if (OutputQueue == null) return;
+		    OutputQueue.Stop (true);
+		    OutputQueue.Flush ();
+		    OutputQueue.Reset ();
 
-				// clear buffers
-				buffersInited = false;
-				foreach (AudioBuffer buf in outputBuffers) {
-					OutputQueue.FreeBuffer (buf.Buffer);
-				}
-				outputBuffers = null;
+		    // clear buffers
+		    buffersInited = false;
+		    foreach (var buf in outputBuffers) {
+		        OutputQueue.FreeBuffer (buf.Buffer);
+		    }
+		    outputBuffers = null;
 
-				// reinit buffers
-				initBuffers();
-			}
+		    // reinit buffers
+		    initBuffers();
 		}
 
 		/// <summary>
@@ -254,7 +250,7 @@ namespace MonoLibSpotify.Player
 		{
 			if( !buffersInited ) return;
 
-			int left = bufferSize - currentBuffer.CurrentOffset;
+			var left = bufferSize - currentBuffer.CurrentOffset;
 			if (left < buffer.Length) {
 				EnqueueBuffer ();
 				WaitForBuffer ();
@@ -281,19 +277,18 @@ namespace MonoLibSpotify.Player
 		/// </summary>
 		protected virtual void Dispose (bool disposing)
 		{
-			if (disposing) {
-				if (OutputQueue != null)
-					OutputQueue.Stop (false);
+		    if (!disposing) return;
+		    if (OutputQueue != null)
+		        OutputQueue.Stop (false);
 				
-				if (outputBuffers != null)
-					foreach (var b in outputBuffers)
-						OutputQueue.FreeBuffer (b.Buffer);
-				
-				if (OutputQueue != null) {
-					OutputQueue.Dispose ();
-					OutputQueue = null;
-				}
-			}
+		    if (outputBuffers != null)
+		        foreach (var b in outputBuffers)
+                    if (OutputQueue != null)
+		                OutputQueue.FreeBuffer (b.Buffer);
+
+		    if (OutputQueue == null) return;
+		    OutputQueue.Dispose ();
+		    OutputQueue = null;
 		}
 		
 		/// <summary>
@@ -310,10 +305,10 @@ namespace MonoLibSpotify.Player
 			if (endRaised)
 				return;
 
-			if (onPlaybackEnd != null && !endRaised) {
-				endRaised = true;
+			endRaised = true;
+
+			if (onPlaybackEnd != null)
 				onPlaybackEnd();
-			}
 		}
 		
 		/// <summary>
@@ -334,7 +329,7 @@ namespace MonoLibSpotify.Player
 		{
 			if( outputBuffers == null ) return;
 
-			int curIndex = outputBuffers.IndexOf (currentBuffer);
+			var curIndex = outputBuffers.IndexOf (currentBuffer);
 			currentBuffer = outputBuffers[curIndex < outputBuffers.Count - 1 ? curIndex + 1 : 0];
 			
 			lock (currentBuffer) {
@@ -357,24 +352,21 @@ namespace MonoLibSpotify.Player
 		void HandleOutputQueueOutputCompleted (object sender, OutputCompletedEventArgs e)
 		{
 			queuedBufferCount--;
-			IntPtr buf = e.IntPtrBuffer;
+			var buf = e.IntPtrBuffer;
 			
-			foreach (var buffer in outputBuffers) {
-				if (buffer.Buffer != buf)
-					continue;
-				
-				// free Buffer
-				buffer.CurrentOffset = 0;
-				lock (buffer) {
-					buffer.IsInUse = false;
-					Monitor.Pulse (buffer);
-				}
+			foreach (var buffer in outputBuffers.Where(buffer => buffer.Buffer == buf))
+			{
+			    // free Buffer
+			    buffer.CurrentOffset = 0;
+			    lock (buffer) {
+			        buffer.IsInUse = false;
+			        Monitor.Pulse (buffer);
+			    }
 			}
 			
-			if (queuedBufferCount == 0 && onPlaybackEnd != null && !endRaised) {
-				endRaised = true;
-				onPlaybackEnd();
-			}
+			//if (queuedBufferCount == 0 && onPlaybackEnd != null && !endRaised) {
+			//	onPlaybackEnd ();
+			//}
 		}
 	}
 }

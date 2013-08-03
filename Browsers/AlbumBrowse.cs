@@ -28,7 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
 using MonoLibSpotify.Models;
@@ -39,12 +38,8 @@ namespace MonoLibSpotify.Browsers
 	{
 		#region Declarations
 		private sp_error error;
-		private SPAlbum album;
-		private SPArtist artist;
-		private string[] copyrights;
-		private SPTrack[] tracks;
-		private string review;
-		#endregion
+
+	    #endregion
 		
 		#region Ctor
 		internal AlbumBrowse(IntPtr albumBrowsePtr)
@@ -54,28 +49,28 @@ namespace MonoLibSpotify.Browsers
 			
 			lock(LibspotifyWrapper.Mutex)
 			{
-				IntPtr strPtr = IntPtr.Zero;
+				var strPtr = IntPtr.Zero;
 				
 				error = LibspotifyWrapper.Browse.Album.Error(albumBrowsePtr);
-				album = new SPAlbum(LibspotifyWrapper.Browse.Album.GetAlbum(albumBrowsePtr));
-				artist = new SPArtist(LibspotifyWrapper.Browse.Album.Artist(albumBrowsePtr));
+				Album = new SPAlbum(LibspotifyWrapper.Browse.Album.GetAlbum(albumBrowsePtr));
+				Artist = new SPArtist(LibspotifyWrapper.Browse.Album.Artist(albumBrowsePtr));
 				
-				copyrights = new string[LibspotifyWrapper.Browse.Album.ArtistNumCopyrights(albumBrowsePtr)];
-				for(int i = 0; i < copyrights.Length; i++)
+				Copyrights = new string[LibspotifyWrapper.Browse.Album.ArtistNumCopyrights(albumBrowsePtr)];
+				for(var i = 0; i < Copyrights.Length; i++)
 				{
 					strPtr = LibspotifyWrapper.Browse.Album.Copyright(albumBrowsePtr, i);
-					copyrights[i] = LibspotifyWrapper.GetString(strPtr, string.Empty);
+					Copyrights[i] = LibspotifyWrapper.GetString(strPtr, string.Empty);
 				}
 				
-				tracks = new SPTrack[LibspotifyWrapper.Browse.Album.NumTracks(albumBrowsePtr)];
-				for(int i = 0; i < tracks.Length; i++)
+				Tracks = new SPTrack[LibspotifyWrapper.Browse.Album.NumTracks(albumBrowsePtr)];
+				for(var i = 0; i < Tracks.Length; i++)
 				{
-					IntPtr trackPtr = LibspotifyWrapper.Browse.Album.Track(albumBrowsePtr, i);
-					tracks[i] = new SPTrack(trackPtr);
+					var trackPtr = LibspotifyWrapper.Browse.Album.Track(albumBrowsePtr, i);
+					Tracks[i] = new SPTrack(trackPtr);
 				}
 				
 				strPtr = LibspotifyWrapper.Browse.Album.Review(albumBrowsePtr);
-				review = LibspotifyWrapper.GetString(strPtr, string.Empty);
+				Review = LibspotifyWrapper.GetString(strPtr, string.Empty);
 				
 				LibspotifyWrapper.Browse.Album.Release(albumBrowsePtr);
 			}
@@ -90,59 +85,30 @@ namespace MonoLibSpotify.Browsers
 				return error;	
 			}
 		}
-		
-		public SPAlbum Album
-		{
-			get
-			{
-				return album;	
-			}
-		}
-		
-		public SPArtist Artist
-		{
-			get
-			{
-				return artist;	
-			}
-		}
-		
-		public SPTrack[] Tracks
-		{
-			get
-			{
-				return tracks;
-			}
-		}
-		
-		public string[] Copyrights
-		{
-			get
-			{
-				return copyrights;
-			}
-		}
-		
-		public string Review
-		{
-			get
-			{
-				return review;
-			}
-		}
-		#endregion	
+
+	    public SPAlbum Album { get; private set; }
+
+	    public SPArtist Artist { get; private set; }
+
+	    public SPTrack[] Tracks { get; private set; }
+
+	    public string[] Copyrights { get; private set; }
+
+	    public string Review { get; private set; }
+
+	    #endregion	
 		
 		#region Public methods
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 			sb.AppendLine("[AlbumBrowse]");
 			sb.AppendLine("Error=" + Error);
 			sb.AppendLine(Album.ToString());
 			sb.AppendLine(Artist.ToString());			
 			sb.AppendLine("Copyrights=" + string.Join(",", Copyrights));
 			sb.AppendLine("Tracks.Length=" + Tracks.Length);
-			foreach(SPTrack t in Tracks)
+			foreach(var t in Tracks)
 				sb.AppendLine(t.ToString());
 			
 			sb.AppendFormat("Review:{0}{1}", Environment.NewLine, Review);

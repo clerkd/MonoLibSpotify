@@ -178,7 +178,7 @@ namespace MonoLibSpotify
 		{
 			if(e.Samples.Length > 0)
 			{
-				if (player.AudioDescription.SampleRate.Equals (e.Rate) || player.AudioDescription.ChannelsPerFrame != e.Channels) {
+				if (!player.AudioDescription.SampleRate.Equals (e.Rate) || player.AudioDescription.ChannelsPerFrame != e.Channels) {
 					var desc = new MonoTouch.AudioToolbox.AudioStreamBasicDescription {
 						BitsPerChannel = 16,
 						FramesPerPacket = 1,
